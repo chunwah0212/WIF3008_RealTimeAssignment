@@ -4,7 +4,7 @@ import time
 import math
 
 
-class Tello():
+class Tello:
 
     def __init__(self):
         # IP and port of Tello
@@ -24,6 +24,8 @@ class Tello():
         self.receiveThread = threading.Thread(target=self.receive)
         self.receiveThread.daemon = True
         self.receiveThread.start()
+
+        self.event = threading.Event()
 
         # default value
         self.x = 0
@@ -46,6 +48,14 @@ class Tello():
 
         # Delay for a user-defined period of time
         time.sleep(delay)
+
+    def send_route(self, message):
+        # Try to send the message otherwise print the exception
+        try:
+            print("Sending message: " + message)
+            self.sock.sendto(message.encode(), self.tello_address)
+        except Exception as e:
+            print("Error sending: " + str(e))
 
     # Receive the message from Tello
     def receive(self):
@@ -164,7 +174,7 @@ class Tello():
         print("Rotation angle changed to : " + str(self.rotateAngle))
 
     def stop(self):
-        self.manual = True # stop the pre-plan
+        self.manual = True  # stop the pre-plan
         self.send('stop', 1)
         print("Drone stop and hovers in the air")
 
