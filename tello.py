@@ -37,6 +37,9 @@ class Tello:
         self.takeOff = False
         self.landed = True
 
+        # enter SDK mode during init
+        self.send('Command', 3)
+
     # Send the message to Tello and allow for a delay in seconds
     def send(self, message, delay):
         # Try to send the message otherwise print the exception
@@ -134,12 +137,18 @@ class Tello:
             print("Drone already landed!")
 
     def rotate_cw(self):
-        self.send('cw ' + str(self.rotateAngle), 4)
-        self.update_location('cw', self.rotateAngle)
+        if self.landed:
+            print("Please take off the drone to perform rotation.")
+        else:
+            self.send('cw ' + str(self.rotateAngle), 4)
+            self.update_location('cw', self.rotateAngle)
 
     def rotate_ccw(self):
-        self.send('ccw ' + str(self.rotateAngle), 4)
-        self.update_location('ccw', self.rotateAngle)
+        if self.landed:
+            print("Please take off the drone to perform rotation.")
+        else:
+            self.send('ccw ' + str(self.rotateAngle), 4)
+            self.update_location('ccw', self.rotateAngle)
 
     def move_up(self):
         self.send('up ' + str(self.distance), 4)
@@ -150,20 +159,32 @@ class Tello:
         print("Drone move down by " + str(self.distance))
 
     def move_forward(self):
-        self.send('forward ' + str(self.distance), 4)
-        self.update_location('forward', self.distance)
+        if self.landed:
+            print("Please take off the drone to perform movement.")
+        else:
+            self.send('forward ' + str(self.distance), 4)
+            self.update_location('forward', self.distance)
 
     def move_backward(self):
-        self.send('back ' + str(self.distance), 4)
-        self.update_location('back', self.distance)
+        if self.landed:
+            print("Please take off the drone to perform movement.")
+        else:
+            self.send('back ' + str(self.distance), 4)
+            self.update_location('back', self.distance)
 
     def move_left(self):
-        self.send('left ' + str(self.distance), 4)
-        self.update_location('left', self.distance)
+        if self.landed:
+            print("Please take off the drone to perform movement.")
+        else:
+            self.send('left ' + str(self.distance), 4)
+            self.update_location('left', self.distance)
 
     def move_right(self):
-        self.send('right ' + str(self.distance), 4)
-        self.update_location('right', self.distance)
+        if self.landed:
+            print("Please take off the drone to perform movement.")
+        else:
+            self.send('right ' + str(self.distance), 4)
+            self.update_location('right', self.distance)
 
     def set_distance(self, distance):
         self.distance = distance
