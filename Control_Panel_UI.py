@@ -1,4 +1,10 @@
+# from PIL import Image
+import time
+import os
+import datetime
+import platform
 import tkinter as tk
+from tkinter import Toplevel
 from threading import Thread
 
 
@@ -7,6 +13,7 @@ class ControlPanelUI:
     def __init__(self, drone, drone_sweep):
         self.drone = drone
         self.drone_sweep = drone_sweep
+        self.frame = None  # frame read from h264decoder
 
         self.root = tk.Tk()
         self.root.resizable(width=False, height=False)
@@ -62,9 +69,15 @@ class ControlPanelUI:
         self.land = tk.Button(self.buttonFrame, text='Land', fg='red', command=self.drone.land).grid(row=2, column=1, padx=5, pady=5)
         self.stop = tk.Button(self.buttonFrame, text='Stop', fg='red', command=self.drone.stop).grid(row=2, column=2, padx=5, pady=5)
         self.backToBase = tk.Button(self.buttonFrame, text='Back To Base', fg='red', command=self.drone.back_base).grid(row=2, column=3, padx=5, pady=5)
+
         # frame for video// to do
-        # videoFrame = tk.Frame(root)
-        # bottomFrame.pack(side=tk.BOTTOM)
+        # self.videoFrame = tk.Frame(self.root)
+        # self.viedoFrame.pack()
+        # self.stream_video = tk.Button(self.videoFrame, text='Stream On', fg="red", command=self.drone._receive_video_thread).grid(row=0, column=0, padx=5, pady=(20, 5))
+        # self.off_video = tk.Button(self.videoFrame, text='Stream Off', fg="red", command=self.drone.land).grid(row=0, column=1, padx=5, pady=(20, 5))
+        self.btn_video = tk.Button(
+            self.root, text="Open Video Streaming", relief="raised", command=self.openStreamWindow)
+        self.btn_video.pack(side="bottom", fill="both", expand="yes", padx=10, pady=5)
 
         # reload ui
         self.reload()
@@ -81,3 +94,71 @@ class ControlPanelUI:
 
     def start_ui(self):
         self.root.mainloop()
+
+    def videoLoop(self):
+        """
+        The mainloop thread of Tkinter
+        Raises:
+            RuntimeError: To get around a RunTime error that Tkinter throws due to threading.
+        """
+        try:
+            # start the thread that get GUI image and draw skeleton
+            time.sleep(0.5)
+            self.sending_command_thread.start()
+            while not self.stopEvent.is_set():
+                system = platform.system()
+
+                # read the frame for GUI show
+                self.frame = self.tello.read()
+                if self.frame is None or self.frame.size == 0:
+                    continue
+
+                    # transfer the format from frame to image
+                image = Image.fromarray(self.frame)
+
+                # we found compatibility problem between Tkinter,PIL and Macos,and it will
+                # sometimes result the very long preriod of the "ImageTk.PhotoImage" function,
+                # so for Macos,we start a new thread to execute the _updateGUIImage function.
+                if system =="Windows" or system =="Linux":
+                    self._updateGUIImage(image)
+
+                else:
+                    thread_tmp = Thread.Thread(target=self._updateGUIImage,args=(image,))
+                    thread_tmp.start()
+                    time.sleep(0.03)
+        except RuntimeError, e:
+            print("[INFO] caught a RuntimeError")
+
+
+    def _updateGUIImage(self,image):
+        """
+        Main operation to initial the object of image,and update the GUI panel
+        """
+        image = ImageTk.PhotoImage(image)
+        # if the panel none ,we need to initial it
+        if self.panel is None:
+            self.panel = tk.Label(image=image)
+            self.panel.image = image
+            self.panel.pack(side="left", padx=10, pady=10)
+        # otherwise, simply update the panel
+        else:
+            self.panel.configure(image=image)
+            self.panel.image = image
+
+    def pauseVideo(self):
+        """
+        Toggle the freeze/unfreze of video
+        """
+        if self.btn_pause.config('relief')[-1] == 'sunken':
+            self.btn_pause.config(relief="raised")
+            self.tello.video_freeze(False)
+        else:
+            self.btn_pause.config(relief="sunken")
+            self.tello.video_freeze(True)
+
+    def openStreamWindow(self):
+        """
+        open the cmd window
+        """
+        panel = Toplevel(self.root)
+        panel.wm_title("Tello Streaming")

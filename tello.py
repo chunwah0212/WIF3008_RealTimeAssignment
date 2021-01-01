@@ -2,11 +2,21 @@ import socket
 import threading
 import time
 import math
+import libh264decoder
+import numpy as np
 
 
 class Tello:
 
     def __init__(self):
+        # stream video
+        self.decoder = libh264decoder.H264Decoder()
+        self.frame = None  # numpy array BGR -- current camera output frame
+        self.is_freeze = False  # freeze current camera output
+        self.last_frame = None
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+
         # IP and port of Tello
         self.tello_address = ('192.168.10.1', 8889)
 
@@ -15,9 +25,19 @@ class Tello:
 
         # Create a UDP connection that we'll send the command to
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket_video = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.local_video_port = 11111  # port for receiving video stream
 
         # Bind to the local address and port
         self.sock.bind(self.local_address)
+
+        # receive video
+        self.sock.sendto(b'command', self.tello_address)
+        print ('sent: command')
+        self.sock.sendto(b'streamon', self.tello_address)
+        print ('sent: streamon')
+
+        self.socket_video.bind((local_ip, self.local_video_port))
 
         # Create and start a listening thread that runs in the background
         # This utilizes our receive functions and will continuously monitor for incoming messages
@@ -26,6 +46,12 @@ class Tello:
         self.receiveThread.start()
 
         self.event = threading.Event()
+
+        # # thread for receiving video
+        self.receive_video_thread = threading.Thread(target=self._receive_video_thread)
+        self.receive_video_thread.daemon = True
+
+        self.receive_video_thread.start()
 
         # default value
         self.x = 0
@@ -226,3 +252,58 @@ class Tello:
         self.y = 0
         print("Drone moved to original Y-axis position, Y = " + str(self.y))
         print("Drone backed to base!\n")
+
+    def _receive_video_thread(self):
+        """
+        Listens for video streaming (raw h264) from the Tello.
+        Runs as a thread, sets self.frame to the most recent frame Tello captured.
+        """
+        packet_data = ""
+        print("receive video\n")
+        while True:
+            try:
+                res_string, ip = self.socket_video.recvfrom(2048)
+                packet_data += res_string
+                # end of frame
+                if len(res_string) != 1460:
+                    for frame in self._h264_decode(packet_data):
+                        self.frame = frame
+                    packet_data = ""
+
+            except socket.error as exc:
+                print ("Caught exception socket.error : %s" % exc)
+
+    def _h264_decode(self, packet_data):
+        """
+        decode raw h264 format data from Tello
+
+        :param packet_data: raw h264 data array
+
+        :return: a list of decoded frame
+        """
+        res_frame_list = []
+        frames = self.decoder.decode(packet_data)
+        for framedata in frames:
+            (frame, w, h, ls) = framedata
+            if frame is not None:
+                # print 'frame size %i bytes, w %i, h %i, linesize %i' % (len(frame), w, h, ls)
+
+                frame = np.fromstring(frame, dtype=np.ubyte, count=len(frame), sep='')
+                frame = (frame.reshape((h, ls / 3, 3)))
+                frame = frame[:, :w, :]
+                res_frame_list.append(frame)
+
+        return res_frame_list
+
+    def read(self):
+        """Return the last frame from camera."""
+        if self.is_freeze:
+            return self.last_frame
+        else:
+            return self.frame
+
+    def video_freeze(self, is_freeze=True):
+        """Pause video output -- set is_freeze to True"""
+        self.is_freeze = is_freeze
+        if is_freeze:
+            self.last_frame = self.frame
