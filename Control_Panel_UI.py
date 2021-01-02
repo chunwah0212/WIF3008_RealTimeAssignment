@@ -3,8 +3,8 @@ import time
 import os
 import datetime
 import platform
-import tkinter as tk
-from tkinter import Toplevel
+import Tkinter as tk
+from Tkinter import Toplevel
 from threading import Thread
 
 
@@ -114,7 +114,7 @@ class ControlPanelUI:
                     continue
 
                     # transfer the format from frame to image
-                image = Image.fromarray(self.frame)
+                image = tk.Image.fromarray(self.frame)
 
                 # we found compatibility problem between Tkinter,PIL and Macos,and it will
                 # sometimes result the very long preriod of the "ImageTk.PhotoImage" function,
@@ -126,7 +126,7 @@ class ControlPanelUI:
                     thread_tmp = Thread.Thread(target=self._updateGUIImage,args=(image,))
                     thread_tmp.start()
                     time.sleep(0.03)
-        except RuntimeError, e:
+        except RuntimeError as e:
             print("[INFO] caught a RuntimeError")
 
 
@@ -134,7 +134,7 @@ class ControlPanelUI:
         """
         Main operation to initial the object of image,and update the GUI panel
         """
-        image = ImageTk.PhotoImage(image)
+        image = tk.ImageTk.PhotoImage(image)
         # if the panel none ,we need to initial it
         if self.panel is None:
             self.panel = tk.Label(image=image)

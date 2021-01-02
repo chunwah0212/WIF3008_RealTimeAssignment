@@ -50,7 +50,6 @@ class Tello:
         # # thread for receiving video
         self.receive_video_thread = threading.Thread(target=self._receive_video_thread)
         self.receive_video_thread.daemon = True
-
         self.receive_video_thread.start()
 
         # default value
