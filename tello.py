@@ -8,7 +8,7 @@ import numpy as np
 
 class Tello:
 
-    def __init__(self):
+    def __init__(self, command_timeout=.3):
         # stream video
         self.decoder = libh264decoder.H264Decoder()
         self.frame = None  # numpy array BGR -- current camera output frame
@@ -16,6 +16,9 @@ class Tello:
         self.last_frame = None
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
+        self.command_timeout = command_timeout
+        self.abort_flag = False
+        self.response = None
 
         # IP and port of Tello
         self.tello_address = ('192.168.10.1', 8889)
@@ -306,3 +309,47 @@ class Tello:
         self.is_freeze = is_freeze
         if is_freeze:
             self.last_frame = self.frame
+
+    def send_command(self, command):
+        """
+        Send a command to the Tello and wait for a response.
+        :param command: Command to send.
+        :return (str): Response from Tello.
+        """
+
+        print (">> send cmd: {}".format(command))
+        self.abort_flag = False
+        timer = threading.Timer(self.command_timeout, self.set_abort_flag)
+
+        self.sock.sendto(command.encode('utf-8'), self.tello_address)
+
+        timer.start()
+        while self.response is None:
+            if self.abort_flag is True:
+                break
+        timer.cancel()
+
+        if self.response is None:
+            response = 'none_response'
+        else:
+            response = self.response.decode('utf-8')
+
+        self.response = None
+
+        return response
+
+    def set_abort_flag(self):
+        """
+        Sets self.abort_flag to True.
+        Used by the timer in Tello.send_command() to indicate to that a response
+
+        timeout has occurred.
+        """
+
+        self.abort_flag = True
+
+    def __del__(self):
+        """Closes the local socket."""
+
+        self.sock.close()
+        self.socket_video.close()
