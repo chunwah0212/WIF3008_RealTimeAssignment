@@ -57,40 +57,43 @@ class Sweep:
         print("Drone back to previous checkpoint")
 
     def perform_sweep(self):
-        self.tello.manual = False
-        # get current location as checkpoint location if is a new sweep route
-        if self.step == 0:
-            self.checkpoint_x = self.tello.x
-            self.checkpoint_y = self.tello.y
-            self.checkpoint_angle = self.tello.angle
+        if self.tello.landed:
+            print("Please take off the drone to perform sweep.")
+        else:
+            self.tello.manual = False
+            # get current location as checkpoint location if is a new sweep route
+            if self.step == 0:
+                self.checkpoint_x = self.tello.x
+                self.checkpoint_y = self.tello.y
+                self.checkpoint_angle = self.tello.angle
 
-        # if not a new route, get back to previous checkpoint
-        if self.step != 0:
-            self.back_checkpoint()
+            # if not a new route, get back to previous checkpoint
+            if self.step != 0:
+                self.back_checkpoint()
 
-        for i in range(len(self.current_route)):
-            if not self.tello.manual:  # each loop check whether is stop
-                if i == self.step:
-                    if self.step == len(self.current_route) - 1:
-                        print("Returning to Checkpoint 0. \n")
+            for i in range(len(self.current_route)):
+                if not self.tello.manual:  # each loop check whether is stop
+                    if i == self.step:
+                        if self.step == len(self.current_route) - 1:
+                            print("Returning to Checkpoint 0. \n")
 
-                    self.tello.send_route(self.current_route[self.step][1] + " " + str(self.current_route[self.step][2]))
-                    time.sleep(4)  # delay to wait drone perform movement, then only update location
-                    if not self.tello.manual:
-                        self.tello.update_location(self.current_route[self.step][1], self.current_route[self.step][2])
+                        self.tello.send_route(self.current_route[self.step][1] + " " + str(self.current_route[self.step][2]))
+                        time.sleep(4)  # delay to wait drone perform movement, then only update location
+                        if not self.tello.manual:
+                            self.tello.update_location(self.current_route[self.step][1], self.current_route[self.step][2])
 
-                    self.tello.send_route(self.current_route[self.step][3] + " " + str(self.current_route[self.step][4]))
-                    time.sleep(5)  # delay to wait drone perform movement, then only update location
-                    if not self.tello.manual:
-                        self.tello.update_location(self.current_route[self.step][3], self.current_route[self.step][4])
+                        self.tello.send_route(self.current_route[self.step][3] + " " + str(self.current_route[self.step][4]))
+                        time.sleep(5)  # delay to wait drone perform movement, then only update location
+                        if not self.tello.manual:
+                            self.tello.update_location(self.current_route[self.step][3], self.current_route[self.step][4])
 
-                    if not self.tello.manual:
-                        # update checkpoint location if stop not trigger
-                        self.checkpoint_x = self.tello.x
-                        self.checkpoint_y = self.tello.y
-                        self.checkpoint_angle = self.tello.angle
-                        print("Arrived at Checkpoint: " + str(self.current_route[self.step][0]) + "\n")
-                        self.step = self.step + 1
+                        if not self.tello.manual:
+                            # update checkpoint location if stop not trigger
+                            self.checkpoint_x = self.tello.x
+                            self.checkpoint_y = self.tello.y
+                            self.checkpoint_angle = self.tello.angle
+                            print("Arrived at Checkpoint: " + str(self.current_route[self.step][0]) + "\n")
+                            self.step = self.step + 1
 
         if self.step == len(self.current_route):
             # complete sweep reset step to 0

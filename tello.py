@@ -64,6 +64,7 @@ class Tello:
         self.manual = True
         self.takeOff = False
         self.landed = True
+        self.height = 0
 
         # enter SDK mode during init
         self.send('Command', 3)
@@ -151,6 +152,7 @@ class Tello:
             self.send('takeoff', 3)
             self.takeOff = True
             self.landed = False
+            self.height = self.height + 30
             print("Drone take off")
         else:
             print("Drone already take off!")
@@ -180,11 +182,23 @@ class Tello:
 
     def move_up(self):
         self.send('up ' + str(self.distance), 4)
+        self.height = self.height + self.distance
+        self.takeOff = True
+        self.landed = False
         print("Drone move up by " + str(self.distance))
 
     def move_down(self):
-        self.send('down ' + str(self.distance), 4)
-        print("Drone move down by " + str(self.distance))
+        if self.landed:
+            print ("Drone already landed.")
+        else:
+            self.send('down ' + str(self.distance), 4)
+            if self.height - self.distance <= 0:
+                self.height = 0
+                self.takeOff = False
+                self.landed = True
+            else:
+                self.height = self.height - self.distance
+            print("Drone move down by " + str(self.distance))
 
     def move_forward(self):
         if self.landed:
@@ -317,7 +331,7 @@ class Tello:
         :return (str): Response from Tello.
         """
 
-        print (">> send cmd: {}".format(command))
+        # print (">> send cmd: {}".format(command))
         self.abort_flag = False
         timer = threading.Timer(self.command_timeout, self.set_abort_flag)
 
