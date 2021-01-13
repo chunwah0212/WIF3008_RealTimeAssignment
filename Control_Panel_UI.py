@@ -16,13 +16,23 @@ class ControlPanelUI:
         self.drone_sweep = drone_sweep
         self.frame = None  # frame read from h264decoder
 
+        # initialize the root window and image panel
         self.root = tk.Tk()
         self.root.resizable(width=False, height=False)
         self.panel = None
 
-        self.btn_pause = tk.Button(self.root, text="Pause", relief="raised", command=self.pauseVideo)
-        self.btn_pause.pack(side="bottom", fill="both",
-                            expand="yes", padx=10, pady=5)
+        self.streaming_frame = tk.Frame(self.root, padx=5, pady=5)
+        self.streaming_frame.pack()
+        self.video_stream = tk.Label(self.streaming_frame, text="Video Stream : ")
+        self.video_stream.pack()
+        self.streaming_frame_image = tk.Frame(self.root, padx=5, pady=5)
+        self.streaming_frame_image.pack()
+        self.wait_stream = tk.Label(self.streaming_frame_image, text="Image unavailable yet")
+        self.wait_stream.pack()
+        self.streaming_frame_button = tk.Frame(self.root, padx=5, pady=5)
+        self.streaming_frame_button.pack()
+        self.btn_pause = tk.Button(self.streaming_frame_button, text="Pause", relief="raised", command=self.pauseVideo)
+        self.btn_pause.pack(fill="both", expand="yes", padx=10, pady=5)
         self.informationFrame = tk.Frame(self.root, padx=5, pady=20)
         self.informationFrame.pack()
         self.currentX = tk.Label(self.informationFrame, text="Current X : " + str(self.drone.x))
@@ -148,8 +158,10 @@ class ControlPanelUI:
                 self.frame = self.drone.read()
                 if self.frame is None or self.frame.size == 0:
                     continue
+                else:
+                    self.fn_to_hide()
 
-                    # transfer the format from frame to image
+                # transfer the format from frame to image
                 image = tk.Image.fromarray(self.frame)
 
                 # we found compatibility problem between Tkinter,PIL and Macos,and it will
@@ -187,9 +199,11 @@ class ControlPanelUI:
         if self.btn_pause.config('relief')[-1] == 'sunken':
             self.btn_pause.config(relief="raised")
             self.drone.video_freeze(False)
+            print('Resume streaming')
         else:
             self.btn_pause.config(relief="sunken")
             self.drone.video_freeze(True)
+            print('Freeze streaming')
 
     def _sendingCommand(self):
         """
@@ -210,3 +224,9 @@ class ControlPanelUI:
         self.stopEvent.set()
         del self.drone
         self.root.quit()
+
+    def fn_to_show(self):
+        self.wait_stream.pack()
+
+    def fn_to_hide(self):
+        self.wait_stream.pack_forget()

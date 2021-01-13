@@ -275,7 +275,7 @@ class Tello:
         Runs as a thread, sets self.frame to the most recent frame Tello captured.
         """
         packet_data = ""
-        print("receive video\n")
+        print("Try to get video streaming\n")
         while True:
             try:
                 res_string, ip = self.socket_video.recvfrom(2048)
