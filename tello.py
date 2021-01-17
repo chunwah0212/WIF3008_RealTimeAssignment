@@ -73,13 +73,15 @@ class Tello:
     def send(self, message, delay):
         # Try to send the message otherwise print the exception
         try:
-            print("Sending message: " + message)
-            self.sock.sendto(message.encode(), self.tello_address)
+            if self.manual:
+                print("Sending message: " + message)
+                self.sock.sendto(message.encode(), self.tello_address)
+                # Delay for a user-defined period of time
+                time.sleep(delay)
+            else:
+                print("Please stop drone to quit auto mode.")
         except Exception as e:
             print("Error sending: " + str(e))
-
-        # Delay for a user-defined period of time
-        time.sleep(delay)
 
     def send_route(self, message):
         # Try to send the message otherwise print the exception
@@ -239,7 +241,7 @@ class Tello:
     def stop(self):
         self.manual = True  # stop the pre-plan
         self.send('stop', 1)
-        print("Drone stop and hovers in the air")
+        print("Drone stop...")
 
     def back_base(self):
         # turn to default angle, 0
