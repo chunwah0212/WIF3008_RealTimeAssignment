@@ -108,6 +108,51 @@ class Tello:
     def update_location(self, command, value):
         # 0 degrees = North, 90 = East, 180 = South, 270 = West
         # if angle anticlockwise turn to cw
+        if self.manual:
+            if command.lower() == "ccw":
+                rotated_angle = 360 - value
+                # update angle
+                self.angle += rotated_angle
+                if self.angle >= 360:
+                    self.angle = self.angle - 360
+
+            if command.lower() == "cw":
+                # update angle
+                self.angle += value
+                if self.angle > 360:
+                    self.angle = self.angle - 360
+
+            if command.lower() == "forward":
+                # update location
+                dy = value * math.cos(math.radians(self.angle))  # change in y
+                dx = value * math.sin(math.radians(self.angle))  # change in x
+                self.y += round(dy)
+                self.x += round(dx)
+
+            if command.lower() == "back":
+                # update location
+                dy = value * math.cos(math.radians(self.angle + 180))  # change in y
+                dx = value * math.sin(math.radians(self.angle + 180))  # change in x
+                self.y += round(dy)
+                self.x += round(dx)
+
+            if command.lower() == "left":
+                dy = value * math.cos(math.radians(self.angle + 270))  # change in y
+                dx = value * math.sin(math.radians(self.angle + 270))  # change in x
+                self.y += round(dy)
+                self.x += round(dx)
+
+            if command.lower() == "right":
+                dy = value * math.cos(math.radians(self.angle + 90))  # change in y
+                dx = value * math.sin(math.radians(self.angle + 90))  # change in x
+                self.y += round(dy)
+                self.x += round(dx)
+
+            print("Current location: X = {} , Y = {}, Current direction: {}\n".format(self.x, self.y, self.angle))
+
+    def update_location_sweep(self, command, value):
+        # 0 degrees = North, 90 = East, 180 = South, 270 = West
+        # if angle anticlockwise turn to cw
         if command.lower() == "ccw":
             rotated_angle = 360 - value
             # update angle
@@ -187,7 +232,7 @@ class Tello:
         self.height = self.height + self.distance
         self.takeOff = True
         self.landed = False
-        print("Drone move up by " + str(self.distance))
+        # print("Drone move up by " + str(self.distance))
 
     def move_down(self):
         if self.landed:
@@ -200,7 +245,7 @@ class Tello:
                 self.landed = True
             else:
                 self.height = self.height - self.distance
-            print("Drone move down by " + str(self.distance))
+            # print("Drone move down by " + str(self.distance))
 
     def move_forward(self):
         if self.landed:

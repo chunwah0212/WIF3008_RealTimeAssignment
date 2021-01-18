@@ -1,10 +1,7 @@
 # from PIL import Image
 import time
-import os
-import datetime
 import platform
 import Tkinter as tk
-from Tkinter import Toplevel
 from threading import Thread
 import threading
 
