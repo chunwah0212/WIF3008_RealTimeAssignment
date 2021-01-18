@@ -36,16 +36,21 @@ class Sweep:
 
     def back_checkpoint(self):
         # turn to previous checkpoint angle
-        diff = self.tello.angle - self.checkpoint_angle
-        if diff <= 0:
-            self.tello.send_route("cw " + str(abs(diff)))
-            time.sleep(3)
-            self.tello.update_location_sweep("cw", abs(diff))
+        print("Back to previous checkpoint...")
+        self.tello.send_route("ccw " + str(self.tello.angle))
+        time.sleep(3)
+        self.tello.angle = 0
 
-        if diff > 0:
-            self.tello.send_route("ccw " + str(diff))
-            time.sleep(3)
-            self.tello.update_location_sweep("ccw", diff)
+        # diff = self.tello.angle - self.checkpoint_angle
+        # if diff <= 0:
+        #     self.tello.send_route("cw " + str(abs(diff)))
+        #     time.sleep(3)
+        #     self.tello.update_location_sweep("cw", abs(diff))
+        #
+        # if diff > 0:
+        #     self.tello.send_route("ccw " + str(diff))
+        #     time.sleep(3)
+        #     self.tello.update_location_sweep("ccw", diff)
 
         # find the distance to move back
         dx = abs(self.tello.x - self.checkpoint_x)
@@ -67,6 +72,10 @@ class Sweep:
             self.tello.send_route("forward " + str(dy))
             time.sleep(3)
             self.tello.y = self.tello.y + dy
+
+        self.tello.send_route("cw " + str(self.checkpoint_angle))
+        time.sleep(3)
+        self.tello.angle = self.checkpoint_angle
 
         print("Current location: X = {} , Y = {}, Current direction: {}\n".format(self.tello.x, self.tello.y, self.tello.angle))
         print("Drone back to previous checkpoint")
@@ -96,14 +105,14 @@ class Sweep:
                             self.tello.send_route(self.current_route[self.step][1] + " " + str(self.current_route[self.step][2]))
                             time.sleep(4)  # delay to wait drone perform movement, then only update location
 
-                        if not self.tello.manual:
+                        # if not self.tello.manual:
                             self.tello.update_location_sweep(self.current_route[self.step][1], self.current_route[self.step][2])
 
                         if not self.tello.manual:
                             self.tello.send_route(self.current_route[self.step][3] + " " + str(self.current_route[self.step][4]))
                             time.sleep(5)  # delay to wait drone perform movement, then only update location
 
-                        if not self.tello.manual:
+                        # if not self.tello.manual:
                             self.tello.update_location_sweep(self.current_route[self.step][3], self.current_route[self.step][4])
 
                         if not self.tello.manual:
